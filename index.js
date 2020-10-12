@@ -1,9 +1,7 @@
 const axios = require("axios");
 const ObjectsToCsv = require("objects-to-csv");
 
-const scrapeLA = async (licNum, count, csvId) => {
-  const results = [];
-
+const scrapeLA = async (licNum, count, results) => {
   for (let i = 0; i <= count; i++) {
     try {
       const urlFirst = `http://www.lslbc.louisiana.gov/wp-admin/admin-ajax.php?api_action=by_license_number&license_number=${licNum}&action=api_actions`;
@@ -38,27 +36,38 @@ const scrapeLA = async (licNum, count, csvId) => {
 
       const data = {
         lic: licNum,
-        companyId: id || "N/A",
+        company_id: id || "N/A",
         zip: mailing_zip || "N/A",
         email: email_address || "N/A",
-        phoneNumber: phone_number || "N/A",
+        phone_number: phone_number || "N/A",
         lic_type: licenses[0].type || "N/A",
-        businessName: company_name || "N/A",
+        business_name: company_name || "N/A",
+        first_issued: licenses[0].first_issued || "N/A",
       };
 
-      console.log(`${licNum} successfully scraped ${data.businessName}`);
+      console.log(`${licNum} successfully scraped ${data.business_name}`);
       results.push(data);
     } catch (e) {
       console.log(`${licNum} could'nt be found`);
     }
 
     const csv = new ObjectsToCsv(results);
-
-    csv.toDisk(`./output${csvId}.csv`);
+    csv.toDisk(`./output.csv`);
 
     licNum++;
     continue;
   }
 };
 
-scrapeLA(561987, 1000, 1);
+const main = (id, threadCount) => {
+  const results = [];
+  const threadArray = new Array(threadCount);
+  threadArray.fill({});
+
+  threadArray.forEach((_, i) => {
+    const count = i * 100;
+    scrapeLA(id + count, 100, results);
+  });
+};
+
+main(561987, 10);
